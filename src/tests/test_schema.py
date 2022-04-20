@@ -23,7 +23,7 @@ def test_examples_query(example_factory, db_session):
     assert result.data == expected_result
 
 
-def test_examples_sorting(example_factory, db_session):
+def test_examples_sorting_default_field_ASC(example_factory, db_session):
     example1 = example_factory(first_name="test")
     example2 = example_factory(first_name="atest")
     query = """
@@ -42,6 +42,35 @@ def test_examples_sorting(example_factory, db_session):
             "edges": [
                 {"node": {"firstName": example2.first_name}},
                 {"node": {"firstName": example1.first_name}},
+            ]
+        }
+    }
+
+    result = schema.execute(query, context_value={"session": db_session})
+
+    assert result.errors is None
+    assert result.data == expected_result
+
+
+def test_examples_sorting_default_field_DESC(example_factory, db_session):
+    example1 = example_factory(first_name="test")
+    example2 = example_factory(first_name="atest")
+    query = """
+        {
+            examples (sort: {firstName: "DESC"}) {
+                edges {
+                    node {
+                        firstName
+                    }
+                }
+            }
+        }
+    """
+    expected_result = {
+        "examples": {
+            "edges": [
+                {"node": {"firstName": example1.first_name}},
+                {"node": {"firstName": example2.first_name}},
             ]
         }
     }

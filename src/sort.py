@@ -2,7 +2,7 @@ import logging
 
 import graphene
 from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
-from sqlalchemy import Column, Integer, MetaData, String, create_engine
+from sqlalchemy import Column, Integer, MetaData, String, create_engine, desc
 from sqlalchemy.orm import configure_mappers, declarative_base
 
 # logging config
@@ -907,21 +907,57 @@ class SortSet(graphene.InputObjectType):
         cls.model = model
         _meta.model = model
 
+        _meta.fields = cls._generate_default_sort_fields(model, fields)
         if not _meta.fields:
             _meta.fields = {}
-        # if fields:
-        _meta.fields = {f: graphene.InputField(graphene.String) for f in fields}
+
         super().__init_subclass_with_meta__(_meta=_meta, **options)
 
     @classmethod
+    def _generate_default_sort_fields(
+        cls, model, sort_fields: "Iterable[str]"
+    ) -> dict[str, Any]:
+        graphql_sort_fields = {}
+        model_fields = cls._get_model_fields(model, sort_fields)
+        for field_name, field_object in model_fields.items():
+            graphql_sort_fields[field_name] = graphene.InputField(graphene.String)
+        return graphql_sort_fields
+
+    @classmethod
+    def _get_model_fields(cls, model, only_fields: "Iterable[str]"):
+        model_fields = {}
+        inspected = inspection.inspect(model)
+        for descr in inspected.all_orm_descriptors:
+            if isinstance(descr, InstrumentedAttribute):
+                attr = descr.property
+                name = attr.key
+                if name not in only_fields:
+                    continue
+
+                column = attr.columns[0]
+                model_fields[name] = {
+                    "column": column,
+                    "type": column.type,
+                    "nullable": column.nullable,
+                }
+        return model_fields
+
+    @classmethod
     def sort(self, query, args):
-        return query.order_by(*args.keys())
+        sort_fields = []
+        for field, ordering in args.items():
+            if ordering.strip().lower() == "desc":
+                sort_field = desc(field)
+            else:
+                sort_field = field
+            sort_fields.append(sort_field)
+        return query.order_by(*sort_fields)
 
 
 class ExampleSort(SortSet):
     class Meta:
         model = Example
-        fields = ["first_name"]
+        fields = ["first_name", "second_name"]
 
 
 class SchemaQuery(graphene.ObjectType):
