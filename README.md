@@ -1,6 +1,6 @@
 # graphene-sqlalchemy-sort
 
-```
+```python
 class ExampleSort(SortSet):
     class Meta:
         model = Example
