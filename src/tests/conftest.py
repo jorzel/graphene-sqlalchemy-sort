@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from sort import Base
+from sort import Base, Example
 
 
 @pytest.fixture(scope="session")
@@ -29,3 +29,14 @@ def db_session(db_connection):
 
     transaction.rollback()
     db_session.close()
+
+
+@pytest.fixture
+def example_factory(db_session):
+    def _example_factory(**kwargs):
+        example = Example(**kwargs)
+        db_session.add(example)
+        db_session.flush()
+        return example
+
+    yield _example_factory

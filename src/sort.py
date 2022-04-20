@@ -1,5 +1,7 @@
 import logging
 
+import graphene
+from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
 from sqlalchemy import Column, Integer, MetaData, String, create_engine
 from sqlalchemy.orm import configure_mappers, declarative_base
 
@@ -31,3 +33,16 @@ class Example(Base):
 
 
 configure_mappers()
+
+
+class ExampleNode(SQLAlchemyObjectType):
+    class Meta:
+        model = Example
+        interfaces = (graphene.relay.Node,)
+
+
+class Query(graphene.ObjectType):
+    examples = SQLAlchemyConnectionField(ExampleNode)
+
+
+schema = graphene.Schema(query=Query)
