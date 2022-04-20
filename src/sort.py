@@ -1,60 +1,16 @@
-import logging
 from typing import TYPE_CHECKING
 
 import graphene
 from graphene.types.inputobjecttype import InputObjectTypeOptions
-from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
-from sqlalchemy import (
-    Column,
-    Integer,
-    MetaData,
-    String,
-    case,
-    create_engine,
-    desc,
-    inspection,
-    nullslast,
-)
-from sqlalchemy.orm import configure_mappers, declarative_base
+from sqlalchemy import desc, inspection, nullslast
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 
 if TYPE_CHECKING:
     from typing import Iterable
 
-# logging config
-LOGGER_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
-logging.basicConfig(format=LOGGER_FORMAT)
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
-# db config
-DB_URI = "sqlite:///:memory:"
-engine = create_engine(DB_URI)
-metadata = MetaData()
-Base = declarative_base(metadata=metadata)
-
-
-class Example(Base):
-    __tablename__ = "example"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    counter = Column(Integer, default=0, nullable=False)
-    first_name = Column(String)
-    second_name = Column(String)
-
-    def __str__(self):
-        return f"Example(id={self.id}, first_name={self.first_name}, second_name={self.second_name}"
-
-    __repr__ = __str__
-
-
-configure_mappers()
-
-
-class ExampleNode(SQLAlchemyObjectType):
-    class Meta:
-        model = Example
-        interfaces = (graphene.relay.Node,)
+def _custom_field_func_name(custom_field: str) -> str:
+    return custom_field + "_sort"
 
 
 class SortSetOptions(InputObjectTypeOptions):
@@ -98,10 +54,10 @@ class SortSet(graphene.InputObjectType):
     @classmethod
     def _generate_custom_sort_fields(cls, model, sort_fields: "Iterable[str]"):
         graphql_sort_fields = {}
-        for sort_field in sort_fields:
-            if not hasattr(cls, sort_field + "_sort"):
+        for field in sort_fields:
+            if not hasattr(cls, _custom_field_func_name(field)):
                 continue
-            graphql_sort_fields[sort_field] = graphene.InputField(graphene.String)
+            graphql_sort_fields[field] = graphene.InputField(graphene.String)
         return graphql_sort_fields
 
     @classmethod
@@ -128,44 +84,11 @@ class SortSet(graphene.InputObjectType):
         sort_fields = []
         for field, ordering in args.items():
             _field = field
-            custom_field = field + "_sort"
-            if hasattr(cls, custom_field):
-                _field = getattr(cls, custom_field)()
+            if hasattr(cls, _custom_field_func_name(_field)):
+                _field = getattr(cls, _custom_field_func_name(_field))()
             if ordering.strip().lower() == "desc":
                 _field = nullslast(desc(_field))
             else:
                 _field = nullslast(_field)
             sort_fields.append(_field)
         return query.order_by(*sort_fields)
-
-
-class ExampleSort(SortSet):
-    class Meta:
-        model = Example
-        fields = ["first_name", "second_name", "name"]
-
-    @classmethod
-    def name_sort(cls):
-        return case(
-            [
-                (Example.second_name.is_(None), Example.first_name),
-                (Example.first_name.is_(None), Example.second_name),
-            ],
-            else_=Example.second_name,
-        )
-
-
-class SchemaQuery(graphene.ObjectType):
-    examples = SQLAlchemyConnectionField(
-        ExampleNode,
-        sort=ExampleSort(),
-    )
-
-    def resolve_examples(self, info, **kwargs):
-        query = info.context["session"].query(Example)
-        if kwargs.get("sort"):
-            query = ExampleSort().sort(query, kwargs["sort"])
-        return query
-
-
-schema = graphene.Schema(query=SchemaQuery)

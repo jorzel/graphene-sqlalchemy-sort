@@ -1,4 +1,4 @@
-from sort import schema
+from schema import schema
 
 
 def test_examples_query(example_factory, db_session):

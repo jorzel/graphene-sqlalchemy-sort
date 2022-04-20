@@ -1,4 +1,4 @@
-from sort import Example
+from models import Example
 
 
 def test_example(example_factory):
