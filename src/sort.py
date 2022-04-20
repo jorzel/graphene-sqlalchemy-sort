@@ -27,7 +27,7 @@ class Example(Base):
     second_name = Column(String)
 
     def __str__(self):
-        return f"Example(id={self.id}, important_counter={self.important_counter}"
+        return f"Example(id={self.id}, first_name={self.first_name}, second_name={self.second_name}"
 
     __repr__ = __str__
 
