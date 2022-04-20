@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from .models import Base, Example
+from .models import Base, Example, Item
 
 
 @pytest.fixture(scope="session")
@@ -40,3 +40,14 @@ def example_factory(db_session):
         return example
 
     yield _example_factory
+
+
+@pytest.fixture
+def item_factory(db_session):
+    def _item_factory(**kwargs):
+        item = Item(**kwargs)
+        db_session.add(item)
+        db_session.flush()
+        return item
+
+    yield _item_factory

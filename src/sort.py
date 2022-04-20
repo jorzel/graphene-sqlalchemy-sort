@@ -13,6 +13,16 @@ def _custom_field_func_name(custom_field: str) -> str:
     return custom_field + "_sort"
 
 
+def is_model_joined(query, model) -> bool:
+    if hasattr(query, "_compile_state"):  # SQLAlchemy >= 1.4
+        join_entities = query._compile_state()._join_entities  # type: ignore
+    else:
+        join_entities = query._join_entities  # type: ignore
+    if model in [mapper.class_ for mapper in join_entities]:
+        return True
+    return False
+
+
 class SortSetOptions(InputObjectTypeOptions):
     model = None
     fields = None
@@ -83,7 +93,7 @@ class SortSet(graphene.InputObjectType):
         for field, ordering in args.items():
             _field = field
             if hasattr(cls, _custom_field_func_name(_field)):
-                _field = getattr(cls, _custom_field_func_name(_field))(query)
+                query, _field = getattr(cls, _custom_field_func_name(_field))(query)
             if ordering.strip().lower() == "desc":
                 _field = nullslast(desc(_field))
             else:

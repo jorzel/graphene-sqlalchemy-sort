@@ -2,9 +2,9 @@ import graphene
 from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
 from sqlalchemy import case
 
-from sort import SortSet
+from sort import SortSet, is_model_joined
 
-from .models import Example
+from .models import Example, Item
 
 
 class ExampleNode(SQLAlchemyObjectType):
@@ -16,11 +16,11 @@ class ExampleNode(SQLAlchemyObjectType):
 class ExampleSort(SortSet):
     class Meta:
         model = Example
-        fields = ["first_name", "second_name", "name"]
+        fields = ["first_name", "second_name", "name", "item_created"]
 
     @classmethod
     def name_sort(cls, query):
-        return case(
+        return query, case(
             [
                 (Example.second_name.is_(None), Example.first_name),
                 (Example.first_name.is_(None), Example.second_name),
@@ -28,12 +28,15 @@ class ExampleSort(SortSet):
             else_=Example.second_name,
         )
 
+    @classmethod
+    def item_created_sort(cls, query):
+        if not is_model_joined(query, Item):
+            query = query.join("items")
+        return query, Item.created
+
 
 class SchemaQuery(graphene.ObjectType):
-    examples = SQLAlchemyConnectionField(
-        ExampleNode,
-        sort=ExampleSort(),
-    )
+    examples = SQLAlchemyConnectionField(ExampleNode, sort=ExampleSort())
 
     def resolve_examples(self, info, **kwargs):
         query = info.context["session"].query(Example)
