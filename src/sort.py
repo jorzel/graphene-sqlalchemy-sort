@@ -85,7 +85,7 @@ class SortSet(graphene.InputObjectType):
         for field, ordering in args.items():
             _field = field
             if hasattr(cls, _custom_field_func_name(_field)):
-                _field = getattr(cls, _custom_field_func_name(_field))()
+                _field = getattr(cls, _custom_field_func_name(_field))(query)
             if ordering.strip().lower() == "desc":
                 _field = nullslast(desc(_field))
             else:

@@ -18,7 +18,7 @@ class ExampleSort(SortSet):
         fields = ["first_name", "second_name", "name"]
 
     @classmethod
-    def name_sort(cls):
+    def name_sort(cls, query):
         return case(
             [
                 (Example.second_name.is_(None), Example.first_name),
