@@ -1,0 +1,4 @@
+
+graphene==2.1.9
+graphene-sqlalchemy==2.3.0
+SQLAlchemy==1.4.35
