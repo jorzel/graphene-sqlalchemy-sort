@@ -39,8 +39,6 @@ class SortSet(graphene.InputObjectType):
 
         _meta.fields = cls._generate_default_sort_fields(model, fields)
         _meta.fields.update(cls._generate_custom_sort_fields(model, fields))
-        if not _meta.fields:
-            _meta.fields = {}
         super().__init_subclass_with_meta__(_meta=_meta, **options)
 
     @classmethod

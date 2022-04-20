@@ -2,8 +2,9 @@ import graphene
 from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
 from sqlalchemy import case
 
-from models import Example
 from sort import SortSet
+
+from .models import Example
 
 
 class ExampleNode(SQLAlchemyObjectType):
