@@ -4,4 +4,4 @@ multi_line_output = 3
 src_paths = "src/"
 
 [tool.pytest.ini_options]
-python_files = "app/tests/*.py"
+python_files = "src/tests/*.py"
