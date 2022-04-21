@@ -1,7 +1,11 @@
 # graphene-sqlalchemy-sort
-Customized sorting for: https://github.com/graphql-python/graphene-sqlalchemy
+Customized sorting for: [Graphene SQLAlchemy library](https://github.com/graphql-python/graphene-sqlalchemy)
 
-Inspiration: https://github.com/art1415926535/graphene-sqlalchemy-filter
+Why do you need it? [Graphene SQLAlchemy library](https://github.com/graphql-python/graphene-sqlalchemy) has sort mechanism bult-in `SQLALchemyConnectionField`,
+however it enables ordering by using `Model` columns (`Model` corresponded to `Node`). It is not possible
+to sort collection using column from joined model / table or exploiting temporary query variable.
+
+This solution is hugly inspired by: [graphene-sqlalchemy-filter](https://github.com/art1415926535/graphene-sqlalchemy-filter)
 
 ```python
 
